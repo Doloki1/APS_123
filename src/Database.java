@@ -79,9 +79,47 @@ public class Database {
         }
     }
 
+    public int criaChat(String user1, String user2, String Title) throws SQLException {
+        int CID;
+        String sql = "INSERT INTO Chats (Title) values('"+Title+"')";
+        PreparedStatement stmt = this.con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        int UID1 = 0;
+        int UID2 = 0;
+        stmt.executeUpdate();
+
+        ResultSet rs = stmt.getGeneratedKeys();
+        rs.next();
+        CID = rs.getInt(1);
+        rs.close();
+        stmt.close();
+
+        sql = "SELECT UID FROM Users WHERE(Username ='"+user1+"');";
+
+        rs = this.st.executeQuery(sql);
+        while(rs.next()){
+            UID1 = rs.getInt("UID");
+        }
+        rs.close();
+
+        sql = "SELECT UID FROM Users WHERE(Username ='"+user2+"');";
+
+        rs = this.st.executeQuery(sql);
+        while(rs.next()){
+            UID2 = rs.getInt("UID");
+        }
+        rs.close();
+
+        sql = "INSERT INTO Chatlink(CID,UID) VALUES(" + CID + "," + UID1 + "),(" + CID + "," + UID2 + ");";
+        this.st.executeQuery(sql);
+
+        return CID;
+    }
+
 
     public static void main(String[] args) throws SQLException {
         Database db = new Database();
+
+        System.out.println(db.criaChat("Carlos","José","ChatTeste"));
 
     }
 }
