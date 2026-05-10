@@ -10,24 +10,24 @@ public class CadastroScreen extends JPanel {
         setOpaque(false);
         setLayout(new GridBagLayout());
 
-        JPanel card = Main.criarCard(500);
+        JPanel card = AppGUi.criarCard(500);
 
-        JLabel titulo = Main.criarTitulo("Criar conta");
+        JLabel titulo = AppGUi.criarTitulo("Criar conta");
 
-        JTextField nome = Main.criarCampo("");
-        JTextField email = Main.criarCampo("");
-        JTextField login = Main.criarCampo("");
+        JTextField nome = AppGUi.criarCampo("");
+        JTextField email = AppGUi.criarCampo("");
+        JTextField login = AppGUi.criarCampo("");
 
         JPasswordField senha = new JPasswordField();
         JPasswordField confirmar = new JPasswordField();
 
-        Main.estilizarCampo(senha);
-        Main.estilizarCampo(confirmar);
+        AppGUi.estilizarCampo(senha);
+        AppGUi.estilizarCampo(confirmar);
 
-        JButton btnCadastrar = Main.criarBotaoGradiente("Cadastrar");
-        JButton btnVoltar = Main.criarBotaoSecundario("← Voltar para o login");
+        JButton btnCadastrar = AppGUi.criarBotaoGradiente("Cadastrar");
+        JButton btnVoltar = AppGUi.criarBotaoSecundario("← Voltar para o login");
 
-        btnVoltar.addActionListener(e -> Main.trocarTela("login"));
+        btnVoltar.addActionListener(e -> AppGUi.trocarTela("login"));
 
         card.add(Box.createVerticalStrut(20));
         card.add(titulo);

@@ -1,3 +1,4 @@
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
@@ -19,7 +20,7 @@ public class Client {
         }
     }
 
-    public void sendMessage(){
+    public void sendMessage(int CID){
 
         try {
             bufferedWriter.write(username);
@@ -29,7 +30,7 @@ public class Client {
             Scanner scanner = new Scanner(System.in);
             while(socket.isConnected()){
                 String messageToSend = scanner.nextLine();
-                bufferedWriter.write(username + ": " + messageToSend);
+                bufferedWriter.write(CID + "〖〗†♘" + username + "〖〗†♘" + messageToSend);
                 bufferedWriter.newLine();
                 bufferedWriter.flush();
             }
@@ -78,6 +79,7 @@ public class Client {
 
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
+
         System.out.println("Digite o seu nome de usuário");
         String username = scanner.nextLine();
 
@@ -85,7 +87,7 @@ public class Client {
 
         Client client = new Client(socket,username);
         client.listenForMessage();
-        client.sendMessage();
+        client.sendMessage(6);
     }
 
 }

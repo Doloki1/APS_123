@@ -1,4 +1,5 @@
 import java.sql.*;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class Database {
@@ -56,6 +57,8 @@ public class Database {
 
                 sql = "INSERT INTO Users(Username,password) VALUES ('"+username+"','"+password+"')";
                 this.st.executeQuery(sql);
+            }else{
+                System.out.println("USUÁRIO JÁ EXISTENTE!");
             }
         }
 
@@ -115,11 +118,25 @@ public class Database {
         return CID;
     }
 
+    public void addChat(int CID, String user) throws SQLException {
+        String sql;
+        ResultSet rs;
+        int UID = 0;
+        sql = "SELECT UID FROM Users WHERE(Username ='"+user+"');";
+
+        rs = this.st.executeQuery(sql);
+        while(rs.next()){
+            UID = rs.getInt("UID");
+        }
+        rs.close();
+
+        sql = "INSERT INTO Chatlink(CID,UID) VALUES(" + CID + "," + UID + ");";
+        this.st.executeQuery(sql);
+    }
+
 
     public static void main(String[] args) throws SQLException {
-        Database db = new Database();
 
-        System.out.println(db.criaChat("Carlos","José","ChatTeste"));
 
     }
 }

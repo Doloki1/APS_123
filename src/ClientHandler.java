@@ -1,6 +1,9 @@
+import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ClientHandler implements Runnable {
 
@@ -9,10 +12,12 @@ public class ClientHandler implements Runnable {
     private BufferedWriter bufferedWriter;
     private BufferedReader bufferedReader;
     private String clientUsername;
+    private Database db;
 
     public ClientHandler(Socket socket){
         try{
             this.socket = socket;
+            this.db = new Database();
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.clientUsername = bufferedReader.readLine();
@@ -26,14 +31,21 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         String messageFromClient;
-
+        String[] MsgLimpa;
         while(socket.isConnected()){
             try{
                 messageFromClient = bufferedReader.readLine();
-                broadcastMessage(messageFromClient);
+                if (!messageFromClient.isBlank() && messageFromClient != null) {
+                    MsgLimpa = messageFromClient.split("〖〗†♘");
+                db.salvaMensagem(MsgLimpa[2],MsgLimpa[1],Integer.parseInt(MsgLimpa[0]));
+                //broadcastMessage(messageFromClient);
+                System.out.println(Arrays.toString(MsgLimpa));
+                }
             } catch (IOException e) {
                 closeEverything(socket,bufferedReader,bufferedWriter);
                 break;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
         }
     }

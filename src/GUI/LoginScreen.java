@@ -9,21 +9,21 @@ public class LoginScreen extends JPanel {
         setOpaque(false);
         setLayout(new GridBagLayout());
 
-        JPanel card = Main.criarCard(400);
+        JPanel card = AppGUi.criarCard(400);
 
-        JLabel titulo = Main.criarTitulo("Pulse App");
+        JLabel titulo = AppGUi.criarTitulo("Pulse App");
 
-        JTextField usuario = Main.criarCampo("");
+        JTextField usuario = AppGUi.criarCampo("");
         JPasswordField senha = new JPasswordField();
-        Main.estilizarCampo(senha);
+        AppGUi.estilizarCampo(senha);
 
-        JButton btnEntrar = Main.criarBotaoGradiente("Entrar");
-        JButton btnCriar = Main.criarBotaoSecundario("Criar nova conta");
+        JButton btnEntrar = AppGUi.criarBotaoGradiente("Entrar");
+        JButton btnCriar = AppGUi.criarBotaoSecundario("Criar nova conta");
 
-        btnCriar.addActionListener(e -> Main.trocarTela("cadastro"));
+        btnCriar.addActionListener(e -> AppGUi.trocarTela("cadastro"));
 
         // 🚀 abre chat
-        btnEntrar.addActionListener(e -> Main.abrirChat());
+        btnEntrar.addActionListener(e -> AppGUi.abrirChat());
 
         card.add(Box.createVerticalStrut(30));
         card.add(titulo);
