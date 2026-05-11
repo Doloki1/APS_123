@@ -10,7 +10,7 @@ public class CadastroScreen extends JPanel {
         setOpaque(false);
         setLayout(new GridBagLayout());
 
-        JPanel card = AppGUi.criarCard(500);
+        JPanel card = AppGUi.criarCard(300);
 
         JLabel titulo = AppGUi.criarTitulo("Criar conta");
 
@@ -31,10 +31,6 @@ public class CadastroScreen extends JPanel {
 
         card.add(Box.createVerticalStrut(20));
         card.add(titulo);
-        card.add(Box.createVerticalStrut(20));
-        card.add(nome);
-        card.add(Box.createVerticalStrut(10));
-        card.add(email);
         card.add(Box.createVerticalStrut(10));
         card.add(login);
         card.add(Box.createVerticalStrut(10));

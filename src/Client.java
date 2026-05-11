@@ -1,3 +1,6 @@
+import GUI.AppGUi;
+
+import javax.swing.*;
 import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.Socket;
@@ -22,22 +25,29 @@ public class Client {
 
     public void sendMessage(int CID){
 
-        try {
-            bufferedWriter.write(username);
-            bufferedWriter.newLine();
-            bufferedWriter.flush();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    bufferedWriter.write(username);
+                    bufferedWriter.newLine();
+                    bufferedWriter.flush();
 
-            Scanner scanner = new Scanner(System.in);
-            while(socket.isConnected()){
-                String messageToSend = scanner.nextLine();
-                bufferedWriter.write(CID + "〖〗†♘" + username + "〖〗†♘" + messageToSend);
-                bufferedWriter.newLine();
-                bufferedWriter.flush();
+                    Scanner scanner = new Scanner(System.in);
+
+                    while(socket.isConnected()){
+                        String messageToSend = scanner.nextLine();
+                        bufferedWriter.write(CID + "〖〗†♘" + username + "〖〗†♘" + messageToSend);
+                        bufferedWriter.newLine();
+                        bufferedWriter.flush();
+                    }
+
+                } catch (IOException e) {
+                    closeEverything(socket,bufferedReader,bufferedWriter);
+                }
+
             }
-        } catch (IOException e) {
-            closeEverything(socket,bufferedReader,bufferedWriter);
-        }
-
+        }).start();
     }
 
     public void listenForMessage(){
@@ -88,6 +98,7 @@ public class Client {
         Client client = new Client(socket,username);
         client.listenForMessage();
         client.sendMessage(6);
+        SwingUtilities.invokeLater(AppGUi::criarTela);
     }
 
 }

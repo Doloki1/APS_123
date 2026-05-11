@@ -16,6 +16,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class ChatUI {
 
+    private static JPanel chatArea;
+
     // contato selecionado
     private static String contatoAtual = "Ana Lima";
 
@@ -25,17 +27,20 @@ public class ChatUI {
     // componentes globais
     private static JPanel painelMensagens;
     private static JScrollPane scrollMensagens;
- // painel individual de cada conversa
+    // painel individual de cada conversa
     private static final Map<String, JPanel> paineisConversas = new HashMap<>();
     private static JLabel tituloContato;
+    private static JPanel inputPanel;
+    private static JPanel painelVazio;
+    private static JPanel header;
     private static JButton botaoAdicionarParticipante;
     private static DefaultListModel<String> modelContatos;
     private static JList<String> listaContatos;
     private static final List<String> todosContatos = new ArrayList<>();
-    
+
     private static boolean atualizandoLista = false;
-    
- // identifica chats em grupo
+
+    // identifica chats em grupo
     private static final Set<String> grupos = new HashSet<>();
 
     // participantes dos grupos
@@ -50,8 +55,8 @@ public class ChatUI {
         paineisConversas.put("Bruno Costa", criarPainelConversa());
         conversas.put("Carla Souza", new StringBuilder());
         paineisConversas.put("Carla Souza", criarPainelConversa());
-        
-        
+
+
         JFrame frame = new JFrame("Pulse Chat");
         frame.setSize(1200, 700);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -68,7 +73,7 @@ public class ChatUI {
 
         atualizarMensagens();
     }
-    
+
     private static void abrirJanelaNovoContato(DefaultListModel<String> model) {
 
         JDialog dialog = new JDialog();
@@ -129,8 +134,8 @@ public class ChatUI {
             if (!nome.isEmpty() && !usuario.isEmpty()) {
 
                 // adiciona contato na lista
-            	model.addElement(nome);
-            	todosContatos.add(nome);
+                model.addElement(nome);
+                todosContatos.add(nome);
 
                 // cria conversa vazia para o novo contato
                 conversas.put(nome, new StringBuilder());
@@ -198,17 +203,17 @@ public class ChatUI {
         btnNovo.setForeground(Color.BLACK);
         btnNovo.setFocusPainted(false);
         btnNovo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        
+
         JButton btnGrupo = new JButton("+ Novo grupo");
 
         btnGrupo.setBackground(new Color(120, 180, 255));
         btnGrupo.setForeground(Color.BLACK);
         btnGrupo.setFocusPainted(false);
         btnGrupo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        
+
         // nova janela
-       
-        
+
+
         sidebar.add(logo);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
         sidebar.add(busca);
@@ -217,52 +222,52 @@ public class ChatUI {
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
         sidebar.add(btnGrupo);
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
-        
+
 
         // contatos
         modelContatos = new DefaultListModel<>();
-        
+
         btnNovo.addActionListener(e -> abrirJanelaNovoContato(modelContatos));
         btnGrupo.addActionListener(e -> criarGrupo());
-        
+
         todosContatos.add("Ana Lima");
         todosContatos.add("Bruno Costa");
         todosContatos.add("Carla Souza");
 
         for (String contato : todosContatos) {
-        	modelContatos.addElement(contato);
+            modelContatos.addElement(contato);
         }
 
         listaContatos = new JList<>(modelContatos);
-     // busca dinâmica
+        // busca dinâmica
         busca.getDocument().addDocumentListener(new DocumentListener() {
 
-        	private void filtrar() {
+            private void filtrar() {
 
-        	    atualizandoLista = true;
+                atualizandoLista = true;
 
-        	    String texto = busca.getText().trim().toLowerCase();
+                String texto = busca.getText().trim().toLowerCase();
 
-        	    modelContatos.clear();
+                modelContatos.clear();
 
-        	    if (texto.isEmpty()) {
+                if (texto.isEmpty()) {
 
-        	        for (String contato : todosContatos) {
-        	        	modelContatos.addElement(contato);
-        	        }
+                    for (String contato : todosContatos) {
+                        modelContatos.addElement(contato);
+                    }
 
-        	    } else {
+                } else {
 
-        	        for (String contato : todosContatos) {
+                    for (String contato : todosContatos) {
 
-        	            if (contato.toLowerCase().contains(texto)) {
-        	            	modelContatos.addElement(contato);
-        	            }
-        	        }
-        	    }
+                        if (contato.toLowerCase().contains(texto)) {
+                            modelContatos.addElement(contato);
+                        }
+                    }
+                }
 
-        	    atualizandoLista = false;
-        	}
+                atualizandoLista = false;
+            }
 
             @Override
             public void insertUpdate(DocumentEvent e) {
@@ -313,7 +318,7 @@ public class ChatUI {
             modelContatos.clear();
 
             for (String contato : todosContatos) {
-            	modelContatos.addElement(contato);
+                modelContatos.addElement(contato);
             }
 
             listaContatos.setSelectedValue(contatoAtual, true);
@@ -336,8 +341,10 @@ public class ChatUI {
         JPanel chat = new JPanel(new BorderLayout());
         chat.setBackground(new Color(10, 15, 30));
 
+        chatArea = chat;
+
         // header
-        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        header = new JPanel(new FlowLayout(FlowLayout.LEFT));
         header.setPreferredSize(new Dimension(0, 60));
         header.setBackground(new Color(20, 25, 45));
 
@@ -347,54 +354,54 @@ public class ChatUI {
         tituloContato.setFont(new Font("Segoe UI", Font.BOLD, 18));
 
         header.add(tituloContato);
-        
+
         header.add(Box.createHorizontalStrut(20));
 
-     // botão editar
-     JButton editar = new JButton("✏");
+        // botão editar
+        JButton editar = new JButton("✏");
 
-     editar.setFocusPainted(false);
-     editar.setBackground(new Color(255, 200, 0));
+        editar.setFocusPainted(false);
+        editar.setBackground(new Color(255, 200, 0));
 
-     editar.addActionListener(e -> editarContato());
+        editar.addActionListener(e -> editarContato());
 
-     header.add(editar);
+        header.add(editar);
 
-     // botão excluir
-     JButton excluir = new JButton("x");
-     
-  // botão adicionar participante
-     botaoAdicionarParticipante = new JButton("+");
+        // botão excluir
+        JButton excluir = new JButton("x");
 
-     botaoAdicionarParticipante.setFocusPainted(false);
-     botaoAdicionarParticipante.setBackground(new Color(120, 255, 120));
+        // botão adicionar participante
+        botaoAdicionarParticipante = new JButton("+");
 
-     botaoAdicionarParticipante.addActionListener(e -> adicionarParticipante());
+        botaoAdicionarParticipante.setFocusPainted(false);
+        botaoAdicionarParticipante.setBackground(new Color(120, 255, 120));
 
-     header.add(Box.createHorizontalStrut(10));
-     header.add(botaoAdicionarParticipante);
+        botaoAdicionarParticipante.addActionListener(e -> adicionarParticipante());
 
-     excluir.setFocusPainted(false);
-     excluir.setBackground(new Color(255, 80, 80));
+        header.add(Box.createHorizontalStrut(10));
+        header.add(botaoAdicionarParticipante);
 
-     excluir.addActionListener(e -> excluirContato());
+        excluir.setFocusPainted(false);
+        excluir.setBackground(new Color(255, 80, 80));
 
-     header.add(Box.createHorizontalStrut(10));
-     header.add(excluir);
+        excluir.addActionListener(e -> excluirContato());
+
+        header.add(Box.createHorizontalStrut(10));
+        header.add(excluir);
 
         // mensagens
-     painelMensagens = new JPanel();
+        painelMensagens = new JPanel();
 
-     painelMensagens.setLayout(new BoxLayout(painelMensagens, BoxLayout.Y_AXIS));
+        painelMensagens.setLayout(new BoxLayout(painelMensagens, BoxLayout.Y_AXIS));
 
-     painelMensagens.setBackground(new Color(10, 15, 30));
+        painelMensagens.setBackground(new Color(10, 15, 30));
 
-     scrollMensagens = new JScrollPane(painelMensagens);
+        scrollMensagens = new JScrollPane(painelMensagens);
 
-     scrollMensagens.setBorder(null);
+        scrollMensagens.setBorder(null);
 
         // input
-        JPanel inputPanel = new JPanel(new BorderLayout());
+        inputPanel = new JPanel(new BorderLayout());
 
         inputPanel.setBackground(new Color(20, 25, 45));
         inputPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -408,14 +415,14 @@ public class ChatUI {
         enviar.setForeground(Color.BLACK);
         enviar.setFocusPainted(false);
         enviar.setPreferredSize(new Dimension(60, 40));
-        
+
         JButton arquivo = new JButton("📎");
 
         arquivo.setBackground(new Color(120, 180, 255));
         arquivo.setForeground(Color.BLACK);
         arquivo.setFocusPainted(false);
         arquivo.setPreferredSize(new Dimension(60, 40));
-        
+
         arquivo.addActionListener(e -> enviarArquivo());
 
         // enviar mensagem privada
@@ -445,15 +452,31 @@ public class ChatUI {
         inputPanel.add(campoMensagem, BorderLayout.CENTER);
         inputPanel.add(botoes, BorderLayout.EAST);
 
+        painelVazio = new JPanel(new GridBagLayout());
+
+        painelVazio.setBackground(new Color(10, 15, 30));
+
+        JLabel vazio = new JLabel("Nenhuma conversa selecionada");
+
+        vazio.setForeground(new Color(120, 120, 140));
+
+        vazio.setFont(new Font("Segoe UI", Font.BOLD, 20));
+
+        painelVazio.add(vazio);
+
         chat.add(header, BorderLayout.NORTH);
-        chat.add(scrollMensagens, BorderLayout.CENTER);
+        chat.add(painelVazio, BorderLayout.CENTER);
         chat.add(inputPanel, BorderLayout.SOUTH);
+
+        header.setVisible(false);
+
+        inputPanel.setVisible(false);
 
         return chat;
     }
 
 
-	// ---------------- ATUALIZA CHAT ----------------
+    // ---------------- ATUALIZA CHAT ----------------
     private static JPanel criarPainelConversa() {
 
         JPanel painel = new JPanel();
@@ -468,15 +491,20 @@ public class ChatUI {
 
         return painel;
     }
-    
+
     private static void adicionarMensagemTexto(String texto) {
 
         JPanel conversaAtual = paineisConversas.get(contatoAtual);
 
         if (conversaAtual == null) return;
 
-        JLabel mensagem = new JLabel(texto);
-        
+        JTextArea mensagem = new JTextArea(texto);
+
+        mensagem.setLineWrap(true);
+        mensagem.setWrapStyleWord(true);
+        mensagem.setEditable(false);
+        mensagem
+
         mensagem.setOpaque(true);
 
         mensagem.setBackground(new Color(35, 45, 70));
@@ -504,14 +532,14 @@ public class ChatUI {
 
         rolarParaBaixo();
     }
-    
+
     private static void adicionarMensagemSistema(String texto) {
 
         JPanel conversaAtual = paineisConversas.get(contatoAtual);
 
         if (conversaAtual == null) return;
 
-        JLabel sistema = new JLabel(texto);
+        JTextArea sistema = new JTextArea(texto);
 
         sistema.setForeground(new Color(120, 180, 255));
 
@@ -531,7 +559,7 @@ public class ChatUI {
 
         rolarParaBaixo();
     }
-    
+
     private static void adicionarImagem(File arquivo) {
 
         JPanel conversaAtual = paineisConversas.get(contatoAtual);
@@ -570,7 +598,7 @@ public class ChatUI {
             );
         }
     }
-    
+
     private static void rolarParaBaixo() {
 
         SwingUtilities.invokeLater(() -> {
@@ -580,10 +608,31 @@ public class ChatUI {
             vertical.setValue(vertical.getMaximum());
         });
     }
-    
+
     private static void atualizarMensagens() {
 
-        if (contatoAtual == null) return;
+        // sem conversa
+        if (contatoAtual == null) {
+
+            header.setVisible(false);
+
+            inputPanel.setVisible(false);
+
+            chatArea.remove(scrollMensagens);
+
+            chatArea.add(painelVazio, BorderLayout.CENTER);
+
+            chatArea.revalidate();
+
+            chatArea.repaint();
+
+            return;
+        }
+
+        // com conversa
+        header.setVisible(true);
+
+        inputPanel.setVisible(true);
 
         tituloContato.setText(contatoAtual);
 
@@ -602,13 +651,21 @@ public class ChatUI {
 
         scrollMensagens.setViewportView(conversaAtual);
 
+        chatArea.remove(painelVazio);
+
+        chatArea.add(scrollMensagens, BorderLayout.CENTER);
+
         conversaAtual.revalidate();
 
         conversaAtual.repaint();
 
+        chatArea.revalidate();
+
+        chatArea.repaint();
+
         rolarParaBaixo();
     }
-    
+
     private static void criarGrupo() {
 
         String nomeGrupo = JOptionPane.showInputDialog(
@@ -625,7 +682,7 @@ public class ChatUI {
 
         // cria conversa
         conversas.put(nomeGrupo, new StringBuilder());
-        
+
         paineisConversas.put(nomeGrupo, criarPainelConversa());
 
         // participantes
@@ -645,7 +702,7 @@ public class ChatUI {
     }
 
     // ---------------- ESTILO ----------------
-    
+
     private static void editarContato() {
 
         if (contatoAtual == null) return;
@@ -726,7 +783,7 @@ public class ChatUI {
 
         atualizarMensagens();
     }
-    
+
     private static void adicionarParticipante() {
 
         // garante que é grupo
@@ -776,7 +833,7 @@ public class ChatUI {
 
         if (selecionado == null) return;
 
-     // adiciona participante
+        // adiciona participante
         participantesGrupo.get(contatoAtual).add(selecionado);
 
         // mensagem automática
@@ -786,7 +843,7 @@ public class ChatUI {
 
         atualizarMensagens();
     }
-    
+
     private static void excluirContato() {
 
         if (contatoAtual == null) return;
@@ -799,15 +856,15 @@ public class ChatUI {
         );
 
         if (resposta != JOptionPane.YES_OPTION) return;
-        
-     // remove grupo
+
+        // remove grupo
         grupos.remove(contatoAtual);
 
         participantesGrupo.remove(contatoAtual);
 
         // remove conversa
         conversas.remove(contatoAtual);
-        
+
         paineisConversas.remove(contatoAtual);
 
         // remove contato
@@ -831,12 +888,12 @@ public class ChatUI {
 
             contatoAtual = null;
 
-            scrollMensagens.setViewportView(new JPanel());
+            atualizarMensagens();
         }
 
         atualizarMensagens();
     }
-    
+
     private static void enviarArquivo() {
 
         JFileChooser chooser = new JFileChooser();
@@ -883,6 +940,6 @@ public class ChatUI {
                 BorderFactory.createLineBorder(new Color(60, 60, 80), 1),
                 BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
-        
+
     }
 }

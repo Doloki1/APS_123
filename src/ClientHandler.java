@@ -35,7 +35,7 @@ public class ClientHandler implements Runnable {
         while(socket.isConnected()){
             try{
                 messageFromClient = bufferedReader.readLine();
-                if (!messageFromClient.isBlank() && messageFromClient != null) {
+                if (messageFromClient != null) {
                     MsgLimpa = messageFromClient.split("〖〗†♘");
                 db.salvaMensagem(MsgLimpa[2],MsgLimpa[1],Integer.parseInt(MsgLimpa[0]));
                 //broadcastMessage(messageFromClient);
