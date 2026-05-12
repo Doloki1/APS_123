@@ -1,8 +1,12 @@
 package GUI;
 
 import javax.swing.*;
+import javax.xml.crypto.Data;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
+import java.io.IOException;
+import java.net.Socket;
+import java.sql.SQLException;
 
 public class AppGUi {
 
@@ -11,6 +15,7 @@ public class AppGUi {
     static JFrame frame;
 
     public static void criarTela() {
+
         frame = new JFrame("Pulse");
         frame.setSize(900, 600);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -46,9 +51,19 @@ public class AppGUi {
     }
 
     // 🚀 abrir chat
-    public static void abrirChat() {
-        frame.dispose();
-        ChatUI.criarTela();
+    public static void abrirChat(String user,String pass) throws SQLException, IOException {
+        if (ChatUI.client == null) {
+            Socket socket = new Socket("127.0.0.1", 9010);
+            ChatUI.client = new Client(socket);
+        }
+        System.out.println(ChatUI.client.sessao);
+        ChatUI.client.tryLogin(user,pass);
+        if(ChatUI.client.sessao) {
+            frame.dispose();
+            ChatUI.criarTela();
+        } else {
+            System.out.println("Login Incorreto.");
+        }
     }
 
     // 🎨 COMPONENTES REUTILIZÁVEIS

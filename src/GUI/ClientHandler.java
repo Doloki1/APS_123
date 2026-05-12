@@ -1,3 +1,5 @@
+package GUI;
+
 import javax.xml.crypto.Data;
 import java.io.*;
 import java.net.Socket;
@@ -13,18 +15,45 @@ public class ClientHandler implements Runnable {
     private BufferedReader bufferedReader;
     private String clientUsername;
     private Database db;
+    public Boolean sessao = false;
 
     public ClientHandler(Socket socket){
         try{
             this.socket = socket;
             this.db = new Database();
+
+            String chamada;
+            String[] chamadaLimpa;
+
+
             this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            this.clientUsername = bufferedReader.readLine();
+
+            do {
+                chamada = bufferedReader.readLine();
+                chamada = chamada.substring(4);
+                chamadaLimpa = chamada.split("〖〗†♘");
+                if (db.login(chamadaLimpa[0],chamadaLimpa[1])){
+                    this.sessao = true;
+                    bufferedWriter.write( "〗♘†〖true");
+                    bufferedWriter.newLine();
+                    bufferedWriter.flush();
+                    System.out.println("Sessão iniciada");
+                }else{
+                    bufferedWriter.write( "〗♘†〖false");
+                    bufferedWriter.newLine();
+                    bufferedWriter.flush();
+                    System.out.println("Sessão Falhada");
+                }
+            }while(!this.sessao);
+
+            this.clientUsername = chamadaLimpa[0];
             clientHandlers.add(this);
             broadcastMessage("SERVER: " + clientUsername + " entrou no chat.");
         } catch (IOException e) {
             closeEverything(socket,bufferedReader,bufferedWriter);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 

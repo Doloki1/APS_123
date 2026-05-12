@@ -2,6 +2,8 @@ package GUI;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.event.DocumentEvent;
@@ -12,7 +14,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.io.File;
 import javax.swing.filechooser.FileNameExtensionFilter;
-
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ChatUI {
 
@@ -37,8 +40,10 @@ public class ChatUI {
     private static DefaultListModel<String> modelContatos;
     private static JList<String> listaContatos;
     private static final List<String> todosContatos = new ArrayList<>();
+    public static Client client;
 
     private static boolean atualizandoLista = false;
+    private static int contadorContatos = 1;
 
     // identifica chats em grupo
     private static final Set<String> grupos = new HashSet<>();
@@ -46,7 +51,9 @@ public class ChatUI {
     // participantes dos grupos
     private static final Map<String, List<String>> participantesGrupo = new HashMap<>();
 
-    public static void criarTela() {
+    public static void criarTela() throws IOException {
+
+        client.listenForMessage();
 
         // cria conversas vazias
         conversas.put("Ana Lima", new StringBuilder());
@@ -121,6 +128,13 @@ public class ChatUI {
         // Botão adicionar
         JButton adicionar = new JButton("Adicionar");
 
+        JButton fechar = new JButton("Fechar");
+
+        fechar.setBackground(new Color(255, 80, 80));
+        fechar.setForeground(Color.WHITE);
+        fechar.setFocusPainted(false);
+        fechar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
         adicionar.setBackground(new Color(0, 210, 255));
         adicionar.setForeground(Color.BLACK);
         adicionar.setFocusPainted(false);
@@ -129,6 +143,8 @@ public class ChatUI {
         adicionar.addActionListener(e -> {
 
             String nome = campoNome.getText().trim();
+            String nomeVisual = nome;
+            nome = gerarIdContato(nome);
             String usuario = campoUsuario.getText().trim();
 
             if (!nome.isEmpty() && !usuario.isEmpty()) {
@@ -154,9 +170,12 @@ public class ChatUI {
             }
         });
 
-        JPanel botaoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        fechar.addActionListener(e -> dialog.dispose());
+
+        JPanel botaoPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         botaoPanel.setOpaque(false);
         botaoPanel.add(adicionar);
+        botaoPanel.add(fechar);
 
         painel.add(titulo);
         painel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -239,6 +258,36 @@ public class ChatUI {
         }
 
         listaContatos = new JList<>(modelContatos);
+
+        listaContatos.setCellRenderer(new DefaultListCellRenderer() {
+
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list,
+                    Object value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus
+            ) {
+
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list,
+                        value,
+                        index,
+                        isSelected,
+                        cellHasFocus
+                );
+
+                String texto = value.toString();
+
+                // remove (#id)
+                texto = texto.replaceAll("\\s\\(#\\d+\\)", "");
+
+                label.setText(texto);
+
+                return label;
+            }
+        });
         // busca dinâmica
         busca.getDocument().addDocumentListener(new DocumentListener() {
 
@@ -406,8 +455,30 @@ public class ChatUI {
         inputPanel.setBackground(new Color(20, 25, 45));
         inputPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        JTextField campoMensagem = new JTextField();
-        estilizarCampo(campoMensagem);
+        JTextArea campoMensagem = new JTextArea(2, 20);
+
+        campoMensagem.setLineWrap(true);
+
+        campoMensagem.setWrapStyleWord(true);
+
+        campoMensagem.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+
+        campoMensagem.setBackground(new Color(40, 40, 55));
+
+        campoMensagem.setForeground(Color.WHITE);
+
+        campoMensagem.setCaretColor(Color.WHITE);
+
+        campoMensagem.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                new Color(60, 60, 80),
+                                1
+                        ),
+                        BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                )
+        );
+
 
         JButton enviar = new JButton("➤");
 
@@ -439,8 +510,21 @@ public class ChatUI {
             }
         });
 
-        // ENTER envia
-        campoMensagem.addActionListener(e -> enviar.doClick());
+        campoMensagem.addKeyListener(new java.awt.event.KeyAdapter() {
+
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+
+                // ENTER envia
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER
+                        && !e.isShiftDown()) {
+
+                    e.consume();
+
+                    enviar.doClick();
+                }
+            }
+        });
 
         JPanel botoes = new JPanel(new GridLayout(1, 2, 5, 0));
 
@@ -449,8 +533,43 @@ public class ChatUI {
         botoes.add(arquivo);
         botoes.add(enviar);
 
-        inputPanel.add(campoMensagem, BorderLayout.CENTER);
+        JScrollPane scrollCampo = new JScrollPane(campoMensagem);
+
+        scrollCampo.setBorder(null);
+
+        scrollCampo.setPreferredSize(new Dimension(0, 55));
+
+        inputPanel.add(scrollCampo, BorderLayout.CENTER);
         inputPanel.add(botoes, BorderLayout.EAST);
+
+        campoMensagem.getDocument().addDocumentListener(new DocumentListener() {
+
+            private void atualizarAltura() {
+
+                int linhas = campoMensagem.getLineCount();
+
+                linhas = Math.max(2, Math.min(linhas, 6));
+
+                campoMensagem.setRows(linhas);
+
+                inputPanel.revalidate();
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                atualizarAltura();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                atualizarAltura();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                atualizarAltura();
+            }
+        });
 
         painelVazio = new JPanel(new GridBagLayout());
 
@@ -495,36 +614,197 @@ public class ChatUI {
     private static void adicionarMensagemTexto(String texto) {
 
         JPanel conversaAtual = paineisConversas.get(contatoAtual);
-
+        client.sendMessage(6,texto.substring(6));
         if (conversaAtual == null) return;
+
+        texto = formatarMensagem(texto);
+
+        JPanel linha = new JPanel(new BorderLayout());
+
+        linha.setOpaque(false);
+
+        linha.setBorder(
+                BorderFactory.createEmptyBorder(5, 20, 5, 20)
+        );
+
+        // bolha
+        JPanel bolha = new JPanel(new BorderLayout());
+
+        bolha.setBackground(new Color(35, 45, 70));
+
+        bolha.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                new Color(60, 80, 120),
+                                1,
+                                true
+                        ),
+                        BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                )
+        );
 
         JTextArea mensagem = new JTextArea(texto);
 
         mensagem.setLineWrap(true);
+
         mensagem.setWrapStyleWord(true);
+
         mensagem.setEditable(false);
-        mensagem
 
-        mensagem.setOpaque(true);
+        mensagem.setFocusable(false);
 
-        mensagem.setBackground(new Color(35, 45, 70));
-
-        mensagem.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createEmptyBorder(5, 5, 5, 5),
-                        BorderFactory.createEmptyBorder(10, 15, 10, 15)
-                )
-        );
+        mensagem.setOpaque(false);
 
         mensagem.setForeground(Color.WHITE);
 
         mensagem.setFont(new Font("Segoe UI", Font.PLAIN, 15));
 
-        mensagem.setBorder(
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        int larguraMaxima = 450;
+
+        mensagem.setSize(
+                new Dimension(larguraMaxima, Short.MAX_VALUE)
         );
 
-        conversaAtual.add(mensagem);
+        Dimension tamanho = mensagem.getPreferredSize();
+
+        mensagem.setPreferredSize(
+                new Dimension(larguraMaxima, tamanho.height)
+        );
+
+        JLabel horario = new JLabel(horarioAtual());
+
+        horario.setForeground(new Color(180, 180, 180));
+
+        horario.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+
+        JPanel rodape = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+
+        rodape.setOpaque(false);
+
+        rodape.add(horario);
+
+        bolha.add(mensagem, BorderLayout.CENTER);
+
+        bolha.add(rodape, BorderLayout.SOUTH);
+
+        JPanel alinhamento = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+
+        alinhamento.setOpaque(false);
+
+        alinhamento.add(bolha);
+
+        linha.add(alinhamento, BorderLayout.CENTER);
+
+        conversaAtual.add(linha);
+
+        conversaAtual.revalidate();
+
+        conversaAtual.repaint();
+
+        rolarParaBaixo();
+    }
+
+    private static void adicionarMensagemRecebida(
+            String usuario,
+            String texto
+    ) {
+
+        JPanel conversaAtual = paineisConversas.get(contatoAtual);
+
+        if (conversaAtual == null) return;
+
+        texto = formatarMensagem(texto);
+
+        JPanel linha = new JPanel(new BorderLayout());
+
+        linha.setOpaque(false);
+
+        linha.setBorder(
+                BorderFactory.createEmptyBorder(5, 20, 5, 20)
+        );
+
+        JPanel bolha = new JPanel(new BorderLayout());
+
+        bolha.setBackground(new Color(55, 55, 80));
+
+        bolha.setBorder(
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(
+                                new Color(90, 90, 120),
+                                1,
+                                true
+                        ),
+                        BorderFactory.createEmptyBorder(10, 15, 10, 15)
+                )
+        );
+
+        JLabel nome = new JLabel(usuario);
+
+        nome.setForeground(new Color(120, 180, 255));
+
+        nome.setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+        JTextArea mensagem = new JTextArea(texto);
+
+        mensagem.setLineWrap(true);
+
+        mensagem.setWrapStyleWord(true);
+
+        mensagem.setEditable(false);
+
+        mensagem.setFocusable(false);
+
+        mensagem.setOpaque(false);
+
+        mensagem.setForeground(Color.WHITE);
+
+        mensagem.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+
+        int larguraMaxima = 450;
+
+        mensagem.setSize(
+                new Dimension(larguraMaxima, Short.MAX_VALUE)
+        );
+
+        Dimension tamanho = mensagem.getPreferredSize();
+
+        mensagem.setPreferredSize(
+                new Dimension(larguraMaxima, tamanho.height)
+        );
+
+        JLabel horario = new JLabel(horarioAtual());
+
+        horario.setForeground(new Color(180, 180, 180));
+
+        horario.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+
+        JPanel topo = new JPanel(new BorderLayout());
+
+        topo.setOpaque(false);
+
+        topo.add(nome, BorderLayout.WEST);
+
+        JPanel rodape = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+
+        rodape.setOpaque(false);
+
+        rodape.add(horario);
+
+        bolha.add(topo, BorderLayout.NORTH);
+
+        bolha.add(mensagem, BorderLayout.CENTER);
+
+        bolha.add(rodape, BorderLayout.SOUTH);
+
+        JPanel alinhamento = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
+        alinhamento.setOpaque(false);
+
+        alinhamento.add(bolha);
+
+        linha.add(alinhamento, BorderLayout.CENTER);
+
+        conversaAtual.add(linha);
 
         conversaAtual.revalidate();
 
@@ -539,7 +819,7 @@ public class ChatUI {
 
         if (conversaAtual == null) return;
 
-        JTextArea sistema = new JTextArea(texto);
+        JLabel sistema = new JLabel(texto);
 
         sistema.setForeground(new Color(120, 180, 255));
 
@@ -924,6 +1204,35 @@ public class ChatUI {
         adicionarMensagemTexto("📎 Você enviou:");
 
         adicionarImagem(arquivo);
+    }
+
+    private static String gerarIdContato(String nome) {
+
+        return nome + " (#" + contadorContatos++ + ")";
+    }
+
+    private static String horarioAtual() {
+
+        return new SimpleDateFormat("HH:mm").format(new Date());
+    }
+
+    private static String formatarMensagem(String texto) {
+
+        // negrito fake
+        texto = texto.replaceAll("\\*(.*?)\\*", "【$1】");
+
+        // itálico fake
+        texto = texto.replaceAll("_(.*?)_", "/$1/");
+
+        // emojis
+        texto = texto.replace(":)", "😊");
+        texto = texto.replace(":(", "😢");
+        texto = texto.replace(":D", "😄");
+        texto = texto.replace("<3", "❤️");
+        texto = texto.replace(":fire:", "🔥");
+        texto = texto.replace(":ok:", "👌");
+
+        return texto;
     }
 
     private static void estilizarCampo(JTextField campo) {
