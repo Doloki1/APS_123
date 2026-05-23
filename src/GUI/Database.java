@@ -1,5 +1,6 @@
 package GUI;
 
+import javax.swing.*;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.Objects;
@@ -7,7 +8,7 @@ import java.util.Objects;
 public class Database {
     String userName,password,url,driver;
     Connection con;
-    Statement st;
+    public Statement st;
 
     public Database() {
 
@@ -44,7 +45,7 @@ public class Database {
         }
     }
 
-    public void salvaUsuario(String username,String password) throws SQLException {
+    public String salvaUsuario(String username,String password) throws SQLException {
 
         if (!username.isBlank() && username != null) {
 
@@ -59,29 +60,58 @@ public class Database {
 
                 sql = "INSERT INTO Users(Username,password) VALUES ('"+username+"','"+password+"')";
                 this.st.executeQuery(sql);
+                return "USERSU";
             }else{
-                System.out.println("USUÁRIO JÁ EXISTENTE!");
+                return "USEREX";
             }
+        }else{
+            return "USERBLANK";
         }
 
     }
 
-    public Boolean login(String username,String Password) throws SQLException {
+    public int login(String username,String Password) throws SQLException {
 
         ResultSet rs = this.st.executeQuery("SELECT * FROM Users WHERE Username = '" + username + "'");
         String name = "";
         String pass = "";
+        int UID = 0;
         String sql;
 
         while (rs.next()) {
             name = rs.getString("Username");
             pass = rs.getString("password");
+            UID = rs.getInt("UID");
         }
-        if(!name.isBlank()){
-            return Objects.equals(Password, pass);
+        if(!name.isBlank() && Objects.equals(Password, pass)){
+            return UID;
         }else{
-            return false;
+            return 0;
         }
+    }
+
+    public String checkUID(String UID) throws SQLException {
+        String name = "";
+        String sql = "SELECT Username FROM Users WHERE(UID=" + UID+");";
+        ResultSet rs = st.executeQuery(sql);
+
+        while(rs.next()){
+            name = rs.getString("Username");
+        }
+
+        return name;
+    }
+
+    public String checkCID(String CID) throws SQLException {
+        String name = "";
+        String sql = "SELECT Title FROM Chats WHERE(CID=" + CID+");";
+        ResultSet rs = st.executeQuery(sql);
+
+        while(rs.next()){
+            name = rs.getString("Title");
+        }
+
+        return CID+":"+name;
     }
 
     public int criaChat(String user1, String user2, String Title) throws SQLException {
@@ -136,6 +166,21 @@ public class Database {
         this.st.executeQuery(sql);
     }
 
+    public Boolean checkUserExist(String nome) throws SQLException {
+        String sql;
+        ResultSet rs;
+        int UID = 0;
+        sql = "SELECT UID FROM Users WHERE(Username ='"+nome+"');";
+
+        rs = this.st.executeQuery(sql);
+        while(rs.next()){
+            UID = rs.getInt("UID");
+        }
+        rs.close();
+
+        this.st.executeQuery(sql);
+        return UID > 0;
+    }
 
     public static void main(String[] args) throws SQLException {
 

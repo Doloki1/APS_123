@@ -1,9 +1,11 @@
 package GUI;
 
+import org.json.JSONArray;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.net.Socket;
+import java.sql.SQLOutput;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.event.DocumentEvent;
@@ -14,15 +16,15 @@ import java.util.HashSet;
 import java.util.Set;
 import java.io.File;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime; // Import the LocalDateTime class
+import java.time.format.DateTimeFormatter; // Import the DateTimeFormatter class
 
 public class ChatUI {
-
+    public static int userlogged;
     private static JPanel chatArea;
 
     // contato selecionado
-    private static String contatoAtual = "Ana Lima";
+    private static String contatoAtual;
 
     // armazena conversas individuais
     private static final Map<String, StringBuilder> conversas = new HashMap<>();
@@ -31,7 +33,7 @@ public class ChatUI {
     private static JPanel painelMensagens;
     private static JScrollPane scrollMensagens;
     // painel individual de cada conversa
-    private static final Map<String, JPanel> paineisConversas = new HashMap<>();
+    public static final Map<String, JPanel> paineisConversas = new HashMap<>();
     private static JLabel tituloContato;
     private static JPanel inputPanel;
     private static JPanel painelVazio;
@@ -53,16 +55,36 @@ public class ChatUI {
 
     public static void criarTela() throws IOException {
 
+        JSONArray chats = client.carregarChats();
+        JSONArray messagens = client.carregarMessages();
+
+        for(int i = 0;i < chats.length(); i++){
+            String index = String.valueOf(chats.get(i));
+            String tmp = index.substring(index.indexOf(':')+2,index.indexOf(',')-1);
+            index = index.substring(index.indexOf("\",\"CID\":")+8,index.indexOf('}')) +":"+tmp;
+            conversas.put(index,new StringBuilder());
+            contatoAtual = index;
+            paineisConversas.put(index, criarPainelConversa());
+            for(int j = 0;j < messagens.length(); j++) {
+                String tmp2 = String.valueOf(messagens.get(j));
+                tmp2 = tmp2.substring(tmp2.indexOf("\",\"CID\":")+8,tmp2.indexOf('}'));
+
+                if(tmp2.equals(index.substring(0,index.indexOf(':')))) {
+                    String msg = String.valueOf(messagens.get(j));
+                    String data = msg.substring(msg.indexOf(",\"MTIME\":")+10, msg.indexOf(",\"CID\":")-1);
+                    int UIDmsg = Integer.parseInt(msg.substring(msg.indexOf("{\"UID\":")+7,msg.indexOf(",\"Message\":\"")));
+                    msg = msg.substring(msg.indexOf(",\"Message\":")+12, msg.indexOf(",\"MID\":")-1);
+                    int CID = Integer.parseInt(index.substring(0, index.indexOf(':')));
+                    if (client.UID == UIDmsg) {
+                        adicionarMensagemTexto("Você: "+msg, paineisConversas.get(index), data,false, CID);
+                    }else{
+                        String nick = client.checkUID(UIDmsg);
+                        adicionarMensagemTexto(nick+": "+msg, paineisConversas.get(index), data,false, CID);
+                    }
+                }
+            }
+        }
         client.listenForMessage();
-
-        // cria conversas vazias
-        conversas.put("Ana Lima", new StringBuilder());
-        paineisConversas.put("Ana Lima", criarPainelConversa());
-        conversas.put("Bruno Costa", new StringBuilder());
-        paineisConversas.put("Bruno Costa", criarPainelConversa());
-        conversas.put("Carla Souza", new StringBuilder());
-        paineisConversas.put("Carla Souza", criarPainelConversa());
-
 
         JFrame frame = new JFrame("Pulse Chat");
         frame.setSize(1200, 700);
@@ -143,14 +165,19 @@ public class ChatUI {
         adicionar.addActionListener(e -> {
 
             String nome = campoNome.getText().trim();
-            String nomeVisual = nome;
+            String var[];
+            System.out.println(nome);
             nome = gerarIdContato(nome);
             String usuario = campoUsuario.getText().trim();
 
             if (!nome.isEmpty() && !usuario.isEmpty()) {
-
+                try {
+                    var = client.addContato(usuario);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
                 // adiciona contato na lista
-                model.addElement(nome);
+                model.addElement(var[0]+":"+);
                 todosContatos.add(nome);
 
                 // cria conversa vazia para o novo contato
@@ -223,13 +250,13 @@ public class ChatUI {
         btnNovo.setFocusPainted(false);
         btnNovo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
-        JButton btnGrupo = new JButton("+ Novo grupo");
+        /*JButton btnGrupo = new JButton("+ Novo grupo");
 
         btnGrupo.setBackground(new Color(120, 180, 255));
         btnGrupo.setForeground(Color.BLACK);
         btnGrupo.setFocusPainted(false);
         btnGrupo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-
+        */
         // nova janela
 
 
@@ -239,19 +266,21 @@ public class ChatUI {
         sidebar.add(Box.createRigidArea(new Dimension(0, 15)));
         sidebar.add(btnNovo);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
-        sidebar.add(btnGrupo);
-        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
+        //sidebar.add(btnGrupo);
+        //sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
 
 
         // contatos
         modelContatos = new DefaultListModel<>();
 
         btnNovo.addActionListener(e -> abrirJanelaNovoContato(modelContatos));
-        btnGrupo.addActionListener(e -> criarGrupo());
+        //btnGrupo.addActionListener(e -> criarGrupo());
 
-        todosContatos.add("Ana Lima");
-        todosContatos.add("Bruno Costa");
-        todosContatos.add("Carla Souza");
+        Set<String> nomes = conversas.keySet();
+
+        for(String nome : nomes){
+            todosContatos.add(nome);//.substring(nome.indexOf(":")+1));
+        }
 
         for (String contato : todosContatos) {
             modelContatos.addElement(contato);
@@ -350,7 +379,6 @@ public class ChatUI {
 
             // impede erro durante filtro
             if (atualizandoLista) return;
-
             String selecionado = listaContatos.getSelectedValue();
 
             if (selecionado == null) return;
@@ -504,7 +532,7 @@ public class ChatUI {
             if (!msg.trim().isEmpty()) {
 
                 // adiciona mensagem apenas nessa conversa
-                adicionarMensagemTexto("Você: " + msg);
+                adicionarMensagemTexto("Você:"+msg,paineisConversas.get(contatoAtual),horarioAtual(),true,Integer.parseInt(contatoAtual.substring(0,contatoAtual.indexOf(':'))));
 
                 campoMensagem.setText("");
             }
@@ -611,11 +639,21 @@ public class ChatUI {
         return painel;
     }
 
-    private static void adicionarMensagemTexto(String texto) {
+    public static void adicionarMensagemTexto(String texto,JPanel conversaAtual,String data,Boolean salva,int CID) {
 
-        JPanel conversaAtual = paineisConversas.get(contatoAtual);
-        client.sendMessage(6,texto.substring(6));
-        if (conversaAtual == null) return;
+        //JPanel conversaAtual = paineisConversas.get(contatoAtual);
+        //client.sendMessage(6,texto.substring(6));
+        if (conversaAtual == null){
+            System.out.println("Vazia");
+            return;
+        }
+        if(salva){
+            client.sendMessage(CID,texto.substring(texto.indexOf(':')+1));
+        }
+
+        Boolean rightChat;
+
+        rightChat = (texto.substring(0,texto.indexOf(':')).equals("Você"));
 
         texto = formatarMensagem(texto);
 
@@ -671,7 +709,7 @@ public class ChatUI {
                 new Dimension(larguraMaxima, tamanho.height)
         );
 
-        JLabel horario = new JLabel(horarioAtual());
+        JLabel horario = new JLabel(data);
 
         horario.setForeground(new Color(180, 180, 180));
 
@@ -686,117 +724,12 @@ public class ChatUI {
         bolha.add(mensagem, BorderLayout.CENTER);
 
         bolha.add(rodape, BorderLayout.SOUTH);
-
-        JPanel alinhamento = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-
-        alinhamento.setOpaque(false);
-
-        alinhamento.add(bolha);
-
-        linha.add(alinhamento, BorderLayout.CENTER);
-
-        conversaAtual.add(linha);
-
-        conversaAtual.revalidate();
-
-        conversaAtual.repaint();
-
-        rolarParaBaixo();
-    }
-
-    private static void adicionarMensagemRecebida(
-            String usuario,
-            String texto
-    ) {
-
-        JPanel conversaAtual = paineisConversas.get(contatoAtual);
-
-        if (conversaAtual == null) return;
-
-        texto = formatarMensagem(texto);
-
-        JPanel linha = new JPanel(new BorderLayout());
-
-        linha.setOpaque(false);
-
-        linha.setBorder(
-                BorderFactory.createEmptyBorder(5, 20, 5, 20)
-        );
-
-        JPanel bolha = new JPanel(new BorderLayout());
-
-        bolha.setBackground(new Color(55, 55, 80));
-
-        bolha.setBorder(
-                BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(
-                                new Color(90, 90, 120),
-                                1,
-                                true
-                        ),
-                        BorderFactory.createEmptyBorder(10, 15, 10, 15)
-                )
-        );
-
-        JLabel nome = new JLabel(usuario);
-
-        nome.setForeground(new Color(120, 180, 255));
-
-        nome.setFont(new Font("Segoe UI", Font.BOLD, 12));
-
-        JTextArea mensagem = new JTextArea(texto);
-
-        mensagem.setLineWrap(true);
-
-        mensagem.setWrapStyleWord(true);
-
-        mensagem.setEditable(false);
-
-        mensagem.setFocusable(false);
-
-        mensagem.setOpaque(false);
-
-        mensagem.setForeground(Color.WHITE);
-
-        mensagem.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-
-        int larguraMaxima = 450;
-
-        mensagem.setSize(
-                new Dimension(larguraMaxima, Short.MAX_VALUE)
-        );
-
-        Dimension tamanho = mensagem.getPreferredSize();
-
-        mensagem.setPreferredSize(
-                new Dimension(larguraMaxima, tamanho.height)
-        );
-
-        JLabel horario = new JLabel(horarioAtual());
-
-        horario.setForeground(new Color(180, 180, 180));
-
-        horario.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-
-        JPanel topo = new JPanel(new BorderLayout());
-
-        topo.setOpaque(false);
-
-        topo.add(nome, BorderLayout.WEST);
-
-        JPanel rodape = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-
-        rodape.setOpaque(false);
-
-        rodape.add(horario);
-
-        bolha.add(topo, BorderLayout.NORTH);
-
-        bolha.add(mensagem, BorderLayout.CENTER);
-
-        bolha.add(rodape, BorderLayout.SOUTH);
-
-        JPanel alinhamento = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JPanel alinhamento;
+        if(rightChat){
+            alinhamento = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        }else{
+            alinhamento = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        }
 
         alinhamento.setOpaque(false);
 
@@ -1201,7 +1134,7 @@ public class ChatUI {
 
         if (conversa == null) return;
 
-        adicionarMensagemTexto("📎 Você enviou:");
+        //adicionarMensagemTexto("📎 Você enviou:");
 
         adicionarImagem(arquivo);
     }
@@ -1211,9 +1144,10 @@ public class ChatUI {
         return nome + " (#" + contadorContatos++ + ")";
     }
 
-    private static String horarioAtual() {
-
-        return new SimpleDateFormat("HH:mm").format(new Date());
+    public static String horarioAtual() {
+                LocalDateTime myDateObj = LocalDateTime.now();
+                DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        return myDateObj.format(myFormatObj);
     }
 
     private static String formatarMensagem(String texto) {
@@ -1223,14 +1157,6 @@ public class ChatUI {
 
         // itálico fake
         texto = texto.replaceAll("_(.*?)_", "/$1/");
-
-        // emojis
-        texto = texto.replace(":)", "😊");
-        texto = texto.replace(":(", "😢");
-        texto = texto.replace(":D", "😄");
-        texto = texto.replace("<3", "❤️");
-        texto = texto.replace(":fire:", "🔥");
-        texto = texto.replace(":ok:", "👌");
 
         return texto;
     }

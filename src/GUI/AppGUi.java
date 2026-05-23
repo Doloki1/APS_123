@@ -50,12 +50,11 @@ public class AppGUi {
         layout.show(container, nome);
     }
 
+
+
     // 🚀 abrir chat
     public static void abrirChat(String user,String pass) throws SQLException, IOException {
-        if (ChatUI.client == null) {
-            Socket socket = new Socket("127.0.0.1", 9010);
-            ChatUI.client = new Client(socket);
-        }
+
         System.out.println(ChatUI.client.sessao);
         ChatUI.client.tryLogin(user,pass);
         if(ChatUI.client.sessao) {
