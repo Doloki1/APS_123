@@ -1,11 +1,9 @@
 package GUI;
 
 import javax.swing.*;
-import javax.xml.crypto.Data;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
 import java.io.IOException;
-import java.net.Socket;
 import java.sql.SQLException;
 
 public class AppGUi {
@@ -49,7 +47,6 @@ public class AppGUi {
     public static void trocarTela(String nome) {
         layout.show(container, nome);
     }
-
 
 
     // 🚀 abrir chat

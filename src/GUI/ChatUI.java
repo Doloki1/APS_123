@@ -5,7 +5,6 @@ import org.json.JSONArray;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.sql.SQLOutput;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.event.DocumentEvent;
@@ -21,27 +20,27 @@ import java.time.format.DateTimeFormatter; // Import the DateTimeFormatter class
 
 public class ChatUI {
     public static int userlogged;
-    private static JPanel chatArea;
+    public static JPanel chatArea;
 
     // contato selecionado
-    private static String contatoAtual;
+    public static String contatoAtual;
 
     // armazena conversas individuais
-    private static final Map<String, StringBuilder> conversas = new HashMap<>();
+    public static final Map<String, StringBuilder> conversas = new HashMap<>();
 
     // componentes globais
-    private static JPanel painelMensagens;
-    private static JScrollPane scrollMensagens;
+    public static JPanel painelMensagens;
+    public static JScrollPane scrollMensagens;
     // painel individual de cada conversa
     public static final Map<String, JPanel> paineisConversas = new HashMap<>();
-    private static JLabel tituloContato;
-    private static JPanel inputPanel;
-    private static JPanel painelVazio;
-    private static JPanel header;
-    private static JButton botaoAdicionarParticipante;
-    private static DefaultListModel<String> modelContatos;
-    private static JList<String> listaContatos;
-    private static final List<String> todosContatos = new ArrayList<>();
+    public static JLabel tituloContato;
+    public static JPanel inputPanel;
+    public static JPanel painelVazio;
+    public static JPanel header;
+    public static JButton botaoAdicionarParticipante;
+    public static DefaultListModel<String> modelContatos;
+    public static JList<String> listaContatos;
+    public static final List<String> todosContatos = new ArrayList<>();
     public static Client client;
 
     private static boolean atualizandoLista = false;
@@ -130,13 +129,6 @@ public class ChatUI {
         subtitulo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Campo nome
-        JLabel lblNome = new JLabel("Nome");
-        lblNome.setForeground(Color.WHITE);
-        lblNome.setFont(new Font("Segoe UI", Font.BOLD, 14));
-
-        JTextField campoNome = new JTextField();
-        estilizarCampo(campoNome);
-        campoNome.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
 
         // Campo usuário
         JLabel lblUsuario = new JLabel("Usuário");
@@ -164,20 +156,22 @@ public class ChatUI {
 
         adicionar.addActionListener(e -> {
 
-            String nome = campoNome.getText().trim();
+            String nome;
             String var[];
-            System.out.println(nome);
-            nome = gerarIdContato(nome);
             String usuario = campoUsuario.getText().trim();
 
-            if (!nome.isEmpty() && !usuario.isEmpty()) {
+            if (!usuario.isEmpty()) {
                 try {
                     var = client.addContato(usuario);
-                } catch (IOException ex) {
+                } catch (IOException | InterruptedException ex) {
                     throw new RuntimeException(ex);
                 }
+
+                if (var == null) return;
+
+                nome = var[1]+":"+var[2];
                 // adiciona contato na lista
-                model.addElement(var[0]+":"+);
+                model.addElement(nome);
                 todosContatos.add(nome);
 
                 // cria conversa vazia para o novo contato
@@ -208,11 +202,6 @@ public class ChatUI {
         painel.add(Box.createRigidArea(new Dimension(0, 5)));
         painel.add(subtitulo);
         painel.add(Box.createRigidArea(new Dimension(0, 20)));
-
-        painel.add(lblNome);
-        painel.add(Box.createRigidArea(new Dimension(0, 5)));
-        painel.add(campoNome);
-        painel.add(Box.createRigidArea(new Dimension(0, 15)));
 
         painel.add(lblUsuario);
         painel.add(Box.createRigidArea(new Dimension(0, 5)));
@@ -624,7 +613,7 @@ public class ChatUI {
 
 
     // ---------------- ATUALIZA CHAT ----------------
-    private static JPanel criarPainelConversa() {
+    public static JPanel criarPainelConversa() {
 
         JPanel painel = new JPanel();
 
@@ -644,7 +633,6 @@ public class ChatUI {
         //JPanel conversaAtual = paineisConversas.get(contatoAtual);
         //client.sendMessage(6,texto.substring(6));
         if (conversaAtual == null){
-            System.out.println("Vazia");
             return;
         }
         if(salva){
@@ -822,7 +810,7 @@ public class ChatUI {
         });
     }
 
-    private static void atualizarMensagens() {
+    public static void atualizarMensagens() {
 
         // sem conversa
         if (contatoAtual == null) {

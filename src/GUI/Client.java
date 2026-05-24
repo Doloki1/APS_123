@@ -14,6 +14,7 @@ public class Client {
     private BufferedWriter bufferedWriter;
     private BufferedReader bufferedReader;
     public String username;
+    public static String contResponse;
     public int UID;
     public Boolean sessao = false;
 
@@ -52,7 +53,7 @@ public class Client {
     }
 
     public String Cadastro(String user, String pass1, String pass2) throws IOException {
-        System.out.println("---"+user+"----"+pass1+"---"+pass2+"---");
+
         if(!user.isBlank() && !pass1.isBlank() && !pass2.isBlank() && user != null && pass1 != null && pass2 != null) {
             if (pass1.equals(pass2)) {
                 String response;
@@ -116,6 +117,17 @@ public class Client {
                         if (msgFromChat != null && msgFromChat.startsWith("〖†〗༽♘")) {
                             MsgLimpa = msgFromChat.substring(5).split("〖〗†♘");
                             ChatUI.adicionarMensagemTexto(MsgLimpa[1] + ": " + MsgLimpa[2], ChatUI.paineisConversas.get(MsgLimpa[3]),ChatUI.horarioAtual(),false,Integer.parseInt(MsgLimpa[0]));
+                        }
+                        if (msgFromChat.startsWith("〖†⤟〗ㅱ")) {
+                            contResponse = msgFromChat;
+
+                        }else if (msgFromChat.startsWith("⤟ㅱㅱ⤟")){
+
+                            ChatUI.conversas.put(msgFromChat.substring(4),new StringBuilder());
+                            ChatUI.paineisConversas.put(msgFromChat.substring(4), ChatUI.criarPainelConversa());
+                            ChatUI.modelContatos.addElement(msgFromChat.substring(4));
+                            ChatUI.todosContatos.add(msgFromChat.substring(4));
+                            ChatUI.atualizarMensagens();
                         }
 
                     } catch (IOException e) {
@@ -207,23 +219,30 @@ public class Client {
         return jsonArray;
     }
 
-    public String[] addContato(String nomeContato) throws IOException {
-        String res;
+    public String[] addContato(String nomeContato) throws IOException, InterruptedException {
+
 
         bufferedWriter.write("〖†⤟〗ㅱ"+nomeContato+"ㅱ〗⤟"+username);
         bufferedWriter.newLine();
         bufferedWriter.flush();
 
-        res = bufferedReader.readLine();
+        while (contResponse == null || contResponse.isBlank()){
+            Thread.sleep(10);
+        }
 
-        if(res.startsWith("〖†⤟〗ㅱtrue")){
+        if(contResponse.startsWith("〖†⤟〗ㅱtrue")){
             String limpo[];
-            res = res.substring(9);
-            limpo = res.split("ㅱ〗⤟");
+            contResponse = contResponse.substring(9);
+
+            limpo = contResponse.split("ㅱ〗⤟");
+
+            contResponse = "";
             return limpo;
-        }else if(res.equals("〖†⤟〗ㅱfalse")){
+        }else if(contResponse.equals("〖†⤟〗ㅱfalse")){
+            contResponse = "";
             JOptionPane.showMessageDialog(null,"Usuário Inexistente!");
         }else{
+            contResponse = "";
             System.out.println("UM ERRO DESCONHECIDO OCORREU AO TENTAR ADICIONAR O CONTATO");
             return null;
         }

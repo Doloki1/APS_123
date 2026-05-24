@@ -40,24 +40,24 @@ public class ClientHandler implements Runnable {
                 cabecario = chamada.substring(0 ,4);
                 chamada = chamada.substring(4);
                 chamadaLimpa = chamada.split("〖〗†♘");
-                System.out.println(cabecario);
+
                 if(cabecario.equals("〗♘†〖")){
-                    System.out.println("Login");
+
                     int UID = db.login(chamadaLimpa[0], chamadaLimpa[1]);
                     if (UID > 0) {
                         this.sessao = true;
                         bufferedWriter.write("〗♘†〖true" + UID);
                         bufferedWriter.newLine();
                         bufferedWriter.flush();
-                        System.out.println("Sessão iniciada");
+
                     } else {
                         bufferedWriter.write("〗♘†〖false");
                         bufferedWriter.newLine();
                         bufferedWriter.flush();
-                        System.out.println("Sessão Falhada");
+
                     }
                 }else if(cabecario.equals("♘〗†〖")){
-                    System.out.println("Cadastro");
+
 
                     switch(db.salvaUsuario(chamadaLimpa[0],chamadaLimpa[1])){
                         case "USEREX":
@@ -121,29 +121,51 @@ public class ClientHandler implements Runnable {
                 broadcastMessage("〖†〗༽♘"+messageFromClient.substring(5)+"〖〗†♘"+nomeChat);
 
 
-                System.out.println(Arrays.toString(MsgLimpa));
+
                 } else if (messageFromClient != null && messageFromClient.startsWith("〖†♘〗†")) {
 
                     String res = db.checkUID(messageFromClient.substring(5));
                     bufferedWriter.write("〖†♘〗†"+res);
                     bufferedWriter.newLine();
                     bufferedWriter.flush();
+
                 } else if (messageFromClient != null && messageFromClient.startsWith("〖†⤟〗ㅱ")) {
                     String limpo[] = messageFromClient.substring(5).split("ㅱ〗⤟");
                     int CID;
+
                     if(db.checkUserExist(limpo[0])){
-
                         CID = db.criaChat(limpo[0],limpo[1],limpo[0]+" e "+limpo[1]);
+                        String mes = "〖†⤟〗ㅱtrueㅱ〗⤟"+CID+"ㅱ〗⤟"+limpo[0]+" e "+limpo[1];
 
-                        bufferedWriter.write("〖†⤟〗ㅱtrueㅱ〗⤟"+CID+"ㅱ〗⤟"+limpo[0]+" e "+limpo[1]);
+                        bufferedWriter.write(mes);
                         bufferedWriter.newLine();
                         bufferedWriter.flush();
+
+                        for (ClientHandler clientHandler : clientHandlers){
+                            try {
+                                if (clientHandler.clientUsername.equals(limpo[0])) {
+                                    clientHandler.bufferedWriter.write("⤟ㅱㅱ⤟"+CID+":"+limpo[0]+" e "+limpo[1]);
+                                    clientHandler.bufferedWriter.newLine();
+                                    clientHandler.bufferedWriter.flush();
+                                }
+
+                            } catch (IOException e){
+                                closeEverything(socket,bufferedReader,bufferedWriter);
+                            }
+                        }
+
+
                     }else{
                         bufferedWriter.write("〖†⤟〗ㅱfalse");
                         bufferedWriter.newLine();
                         bufferedWriter.flush();
                     }
 
+                } else {
+
+                    bufferedWriter.write("erro");
+                    bufferedWriter.newLine();
+                    bufferedWriter.flush();
                 }
             } catch (IOException e) {
                 closeEverything(socket,bufferedReader,bufferedWriter);
